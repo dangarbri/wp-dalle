@@ -3,6 +3,7 @@ let content = document.getElementById('js-content');
 let submit = document.getElementById('js-button');
 let separator = document.getElementById('js-separator');
 let span = document.getElementById('js-span');
+let counter = document.getElementById('js-counter');
 let pending = false;
 
 submit.onclick = GenerateImage;
@@ -17,6 +18,7 @@ async function GenerateImage() {
         if (json.hasOwnProperty('error')) {
             ApplyError(json.error.message, prompt.value);
         } else {
+            UpdateCount();
             ApplyImage(json, prompt.value);
         }
     } catch (e) {
@@ -60,3 +62,16 @@ function CompleteLoading() {
     separator.classList.remove('image-loading');
     span.remove();
 }
+
+async function UpdateCount() {
+    let req = await fetch('https://dangarbri.tech/wp-json/dalle-rest-api/v1/count');
+    let json = await req.json();
+    counter.textContent = json.count;
+    counter.parentElement.style.display = "block";
+}
+
+async function UpdateCountForever() {
+    await UpdateCount();
+    setTimeout(UpdateCountForever, 5000);
+}
+UpdateCountForever();

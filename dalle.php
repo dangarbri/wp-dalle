@@ -3,7 +3,7 @@
  * Plugin Name: DALL-E API
  * Description: Adds a REST Endpoint for interacting with DALL-E
  * Author: Daniel Garcia Briseno (daniel@dangarbri.tech)
- * Version: 1.0.0
+ * Version: 1.1.2
  * Disclaimer - I don't know wordpress well, most of this PHP code was written with Copilot.
  *              the associated app.js and styles.css are hand written.
  */
@@ -53,6 +53,7 @@ register_uninstall_hook(__FILE__, 'dalle_plugin_uninstall');
 
 function dalle_plugin_uninstall()
 {
+    delete_option('dalle_rest_api_count');
     delete_option('dalle_rest_api_key');
 }
 
@@ -62,7 +63,7 @@ add_action('rest_api_init', function () {
         '/dalle/',
         array (
             'methods' => 'GET',
-            'callback' => 'my_awesome_func',
+            'callback' => 'dalle_plugin_request_image',
             'args' => array (
                 'prompt' => array (
                     'required' => false,
@@ -70,9 +71,18 @@ add_action('rest_api_init', function () {
             ),
         )
     );
+
+    register_rest_route(
+        'dalle-rest-api/v1',
+        '/count/',
+        array (
+            'methods' => 'GET',
+            'callback' => 'dalle_plugin_get_count'
+        )
+    );
 });
 
-function my_awesome_func($data)
+function dalle_plugin_request_image($data)
 {
     $prompt = $data['prompt'];
 
@@ -117,6 +127,16 @@ function my_awesome_func($data)
     // Decode the JSON response
     $json = json_decode($body, true);
 
+    // Increment counter
+    if (!array_key_exists('error', $json)) {
+        $count = get_option('dalle_rest_api_count', 0);
+        update_option('dalle_rest_api_count', $count + 1);
+    }
+  
     // Return the JSON response
     return $json;
+}
+
+function dalle_plugin_get_count() {
+    return array ('count' => get_option('dalle_rest_api_count', 0));
 }
